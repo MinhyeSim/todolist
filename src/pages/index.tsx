@@ -1,113 +1,140 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Input from "@/components/Input";
+import Button from "@/components/Button";
+import { Todo } from "@/features/todos/types";
+import TodoItem from "@/features/todos/components/TodoItem";
+import { createTodo } from "@/features/todos/api";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const tenantId = "minhye";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+export default function HomePage() {
+  const [todos, setTodos] = useState<Todo[] | null>(null);
+  const [task, setTask] = useState("");
+  const [error, setError] = useState("");
 
-export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const saved = localStorage.getItem(tenantId);
+    if (saved) {
+      setTodos(JSON.parse(saved));
+    } else {
+      setTodos([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (todos) {
+      localStorage.setItem(tenantId, JSON.stringify(todos));
+    }
+  }, [todos]);
+
+  const handleAddTask = async() => {
+    if (!task.trim()) {
+      setError("할 일을 입력해주세요.");
+      return;
+    }
+
+    try {
+      const newTodoFromServer = await createTodo(tenantId, { name: task.trim() });
+
+    const newTodo: Todo = {
+      id: String(newTodoFromServer.id),
+      content: newTodoFromServer.name,
+      status: newTodoFromServer.isCompleted ? "done" : "todo",
+    };
+    
+      console.log("🟢 새 할 일:", newTodo);
+      setTodos((prev) => [...(prev ?? []), newTodo]);
+      setTask("");
+      setError("");
+    } catch (err) {
+      const error = err as any;
+      console.error("할 일 추가 실패:",  error?.response?.data || error.message || error);
+      setError("등록 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleToggle = (id: string) => {
+    setTodos((prev) =>
+      prev?.map((todo) =>
+        todo.id === id
+          ? { ...todo, status: todo.status === "todo" ? "done" : "todo" }
+          : todo
+      ) ?? []
+    );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleAddTask();
+  };
+
+  const todoItems = todos?.filter((t) => t.status === "todo") ?? [];
+  const doneItems = todos?.filter((t) => t.status === "done") ?? [];
+
+  if (todos === null) {
+    return <div className="text-center py-10 text-slate-500">로딩 중...</div>;
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+    <div className="w-full min-h-screen bg-slate-100 text-slate-900 px-6 py-10">
+      {/* 입력창 */}
+      <div className="max-w-6xl mx-auto mt-8 mb-12">
+        <div className="flex justify-center">
+          <div className="grid grid-cols-[1fr_auto] gap-4 w-full max-w-[700px] mx-auto">
+            <Input
+              placeholder="할 일을 입력하세요"
+              value={task}
+              onChange={(e) => setTask(e.target.value)}
+              onKeyDown={handleKeyDown}
+              error={error}
+              className="flex-1 h-12 px-6 py-2 text-base border-2 border-slate-900 rounded-full"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Button
+              onClick={handleAddTask}
+              className="h-12 px-6 border-2 border-slate-900 bg-white hover:bg-slate-100 rounded-full"
+              >
+              + 추가하기
+            </Button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      {/* 좌우 카드 레이아웃 */}
+      <div className="max-w-6xl mx-auto flex gap-8">
+        {/* TO DO 카드 */}
+        <div className="w-1/2">
+          <h2 className="mb-4 px-4 py-2 rounded-full bg-lime-300 text-slate-900 font-bold inline-block">
+            TO DO
+          </h2>
+          <div className="space-y-4">
+            {todoItems.length === 0 ? (
+              <p className="text-slate-400 px-4">할 일이 없어요</p>
+            ) : (
+              todoItems.map((todo) => (
+                <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* DONE 카드 */}
+        <div className="w-1/2">
+          <h2 className="mb-4 px-4 py-2 rounded-full bg-green-800 text-white font-bold inline-block">
+            DONE
+          </h2>
+          <div className="space-y-4">
+            {doneItems.length === 0 ? (
+              <p className="text-slate-400 px-4">아직 다한 일이 없어요</p>
+            ) : (
+              doneItems.map((todo) => (
+                <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
