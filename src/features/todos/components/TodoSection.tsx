@@ -1,12 +1,12 @@
 // src/features/todos/components/TodoSection.tsx
-import { Todo } from "../types";
+import { TodoResponse } from "../types";
 import TodoItem from "./TodoItem";
 
 type Props = {
   title: string;
   color: string;
-  todos: Todo[];
-  onToggle: (id: string) => void;
+  todos: TodoResponse[];          
+  onToggle: (id: number) => void;
 };
 
 const TodoSection = ({ title, color, todos, onToggle }: Props) => {
@@ -20,7 +20,7 @@ const TodoSection = ({ title, color, todos, onToggle }: Props) => {
 
       {todos.length === 0 ? (
         <div className="text-center text-slate-400 italic">
-          {isDone ? "아직 다한 일이 없어요" : "할 일이 없어요"}
+          {isDone ? "아직 완료한 일이 없어요" : "해야할 일이 없어요"}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

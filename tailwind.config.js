@@ -1,15 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    content: [
-      "./src/**/*.{js,ts,jsx,tsx}",
-    ],
+    content: ["./src/**/*.{js,ts,jsx,tsx}"],
     theme: {
       extend: {
         fontFamily: {
           nanum: ['"NanumSquare"', 'sans-serif'],
         },
         colors: {
-          // 사용 가능한 색상들
           slate: {
             100: "#F1F5F9",
             200: "#E2E8F0",

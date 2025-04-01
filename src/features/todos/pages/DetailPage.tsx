@@ -2,7 +2,13 @@
 
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { Todo } from "@/features/todos/types";
+import { TodoResponse } from "@/features/todos/types";
+import {
+  getTodoDetail,
+  updateTodo,
+  deleteTodo,
+  uploadImage,
+} from "@/features/todos/api";
 
 const tenantId = "minhye";
 
@@ -10,31 +16,85 @@ export default function DetailPage() {
   const router = useRouter();
   const { itemId } = router.query;
 
-  const [todo, setTodo] = useState<Todo | null>(null);
-  const [content, setContent] = useState("");
-  const [status, setStatus] = useState<"todo" | "done">("todo");
+  const [todo, setTodo] = useState<TodoResponse | null>(null);
+  const [name, setName] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
   const [memo, setMemo] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
 
+  // 상세 조회
   useEffect(() => {
     if (!itemId) return;
 
-    const saved = localStorage.getItem(tenantId);
-    if (saved) {
-      const todos: Todo[] = JSON.parse(saved);
-      const found = todos.find((t) => t.id === itemId);
-      if (found) {
-        setTodo(found);
-        setContent(found.content);
-        setStatus(found.status);
-        setMemo(found.memo || "");
-        setImageUrl(found.imageUrl || null);
+    const fetch = async () => {
+      try {
+        const result = await getTodoDetail(tenantId, String(itemId));
+        setTodo(result);
+        setName(result.name);
+        setIsCompleted(result.isCompleted);
+        setMemo(result.memo || "");
+        setImageUrl(result.imageUrl || null);
+      } catch (err) {
+        const error = err as any;
+        console.error("상세 조회 실패:", error?.response?.data || error.message || error);
       }
-    }
+    };
+
+    fetch();
   }, [itemId]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 수정
+  const handleSave = async () => {
+    if (!todo || !itemId) return;
+
+    try {
+      const updated = await updateTodo(tenantId, todo.id, {
+        name,
+        memo,
+        imageUrl,
+        isCompleted,
+      });
+
+      const saved = localStorage.getItem(tenantId);
+      if (saved) {
+        const todos: TodoResponse[] = JSON.parse(saved);
+        const updatedTodos = todos.map((t) =>
+          t.id === updated.id ? updated : t
+        );
+        localStorage.setItem(tenantId, JSON.stringify(updatedTodos));
+      }
+
+      router.push("/");
+    } catch (err) {
+      const error = err as any;
+      console.error("수정 실패:", error?.response?.data || error.message || error);
+    }
+  };
+
+  // 삭제
+  const handleDelete = async () => {
+    if (!todo) return;
+
+    try {
+      await deleteTodo(tenantId, todo.id);
+
+      const saved = localStorage.getItem(tenantId);
+      if (saved) {
+        const todos: TodoResponse[] = JSON.parse(saved);
+        const filtered = todos.filter((t) => t.id !== todo.id);
+        localStorage.setItem(tenantId, JSON.stringify(filtered));
+      }
+
+      router.push("/");
+    } catch (err) {
+      const error = err as any;
+      console.error("삭제 실패:", error?.response?.data || error.message || error);
+    }
+  };
+
+  // 이미지 업로드
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -50,63 +110,38 @@ export default function DetailPage() {
       return;
     }
 
-    setImageError("");
-    const url = URL.createObjectURL(file);
-    setImageUrl(url);
-  };
-
-  const handleSave = () => {
-    if (!todo) return;
-
-    const saved = localStorage.getItem(tenantId);
-    if (saved) {
-      const todos: Todo[] = JSON.parse(saved);
-      const updated = todos.map((t) =>
-        t.id === todo.id ? { ...t, content, status, memo, imageUrl } : t
-      );
-      localStorage.setItem(tenantId, JSON.stringify(updated));
+    try {
+      const url = await uploadImage(tenantId, file);
+      setImageUrl(url);
+      setImageError("");
+    } catch (err) {
+      const error = err as any;
+      console.error("업로드 실패:", error?.response?.data || error.message || error);
+      setImageError("이미지 업로드 중 오류가 발생했습니다.");
     }
-
-    router.push("/");
   };
 
-  const handleDelete = () => {
-    if (!todo) return;
-
-    const saved = localStorage.getItem(tenantId);
-    if (saved) {
-      const todos: Todo[] = JSON.parse(saved);
-      const filtered = todos.filter((t) => t.id !== todo.id);
-      localStorage.setItem(tenantId, JSON.stringify(filtered));
-    }
-
-    router.push("/");
-  };
-
-  if (!todo) return <div className="p-6 text-center text-slate-500">할 일을 찾을 수 없습니다.</div>;
+  if (!todo)
+    return <div className="p-6 text-center text-slate-500">할 일을 찾을 수 없습니다.</div>;
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow space-y-6">
-
-
       {/* 상태 + 제목 */}
       <div className="space-y-1">
         <div className="flex gap-2">
           <button
-            onClick={() =>
-              setStatus((prev) => (prev === "todo" ? "done" : "todo"))
-            }
+            onClick={() => setIsCompleted((prev) => !prev)}
             className={`text-sm px-3 py-1 rounded-full font-semibold transition ${
-              status === "done"
+              isCompleted
                 ? "bg-violet-600 text-white"
                 : "bg-slate-300 text-slate-900"
             }`}
           >
-            {status === "done" ? "완료됨" : "진행 중"}
+            {isCompleted ? "완료됨" : "진행 중"}
           </button>
           <input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="할 일 제목"
             className="flex-1 border border-slate-300 px-4 py-2 rounded-md text-base"
           />
@@ -126,7 +161,9 @@ export default function DetailPage() {
 
       {/* 이미지 업로드 */}
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-600">이미지 업로드</label>
+        <label className="text-sm font-semibold text-slate-600">
+          이미지 업로드
+        </label>
         <input
           type="file"
           accept="image/*"

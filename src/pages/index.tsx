@@ -2,80 +2,85 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import { Todo } from "@/features/todos/types";
-import TodoItem from "@/features/todos/components/TodoItem";
-import { createTodo } from "@/features/todos/api";
+import { TodoResponse } from "@/features/todos/types";
+import TodoSection from "@/features/todos/components/TodoSection";
+import { createTodo, getTodos, updateTodoStatus } from "@/features/todos/api";
 
 const tenantId = "minhye";
 
 export default function HomePage() {
-  const [todos, setTodos] = useState<Todo[] | null>(null);
+  const [todos, setTodos] = useState<TodoResponse[]>([]);
   const [task, setTask] = useState("");
   const [error, setError] = useState("");
-
   const router = useRouter();
 
+  // 서버에서 할 일 목록 불러오기
   useEffect(() => {
-    const saved = localStorage.getItem(tenantId);
-    if (saved) {
-      setTodos(JSON.parse(saved));
-    } else {
-      setTodos([]);
-    }
+    const fetchTodos = async () => {
+      try {
+        const serverTodos = await getTodos(tenantId);
+        setTodos(serverTodos);
+        localStorage.setItem(tenantId, JSON.stringify(serverTodos));
+      } catch (err) {
+        console.error("할 일 목록 불러오기 실패", err);
+        const cached = localStorage.getItem(tenantId);
+        if (cached) {
+          setTodos(JSON.parse(cached));
+        }
+      }
+    };
+    fetchTodos();
   }, []);
 
+  // 로컬스토리지 동기화
   useEffect(() => {
-    if (todos) {
-      localStorage.setItem(tenantId, JSON.stringify(todos));
-    }
+    localStorage.setItem(tenantId, JSON.stringify(todos));
   }, [todos]);
 
-  const handleAddTask = async() => {
+  // 할 일 추가
+  const handleAddTask = async () => {
     if (!task.trim()) {
       setError("할 일을 입력해주세요.");
       return;
     }
 
     try {
-      const newTodoFromServer = await createTodo(tenantId, { name: task.trim() });
-
-    const newTodo: Todo = {
-      id: String(newTodoFromServer.id),
-      content: newTodoFromServer.name,
-      status: newTodoFromServer.isCompleted ? "done" : "todo",
-    };
-    
-      console.log("🟢 새 할 일:", newTodo);
-      setTodos((prev) => [...(prev ?? []), newTodo]);
+      const newTodo = await createTodo(tenantId, { name: task.trim() });
+      const updatedTodos = [newTodo, ...todos];
+      setTodos(updatedTodos);
       setTask("");
       setError("");
     } catch (err) {
-      const error = err as any;
-      console.error("할 일 추가 실패:",  error?.response?.data || error.message || error);
+      console.error("할 일 추가 실패", err);
       setError("등록 중 오류가 발생했습니다.");
     }
   };
 
-  const handleToggle = (id: string) => {
-    setTodos((prev) =>
-      prev?.map((todo) =>
-        todo.id === id
-          ? { ...todo, status: todo.status === "todo" ? "done" : "todo" }
-          : todo
-      ) ?? []
-    );
+  const handleToggle = async (id: number) => {
+    try {
+      const updatedTodos = todos?.map((todo) =>
+        todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
+      ) || [];
+  
+      setTodos(updatedTodos);
+  
+      const toggled = updatedTodos.find((t) => t.id === id);
+      if (toggled) {
+        await updateTodoStatus(tenantId, toggled.id, toggled.isCompleted);
+      }
+  
+      // localStorage에도 저장
+      localStorage.setItem(tenantId, JSON.stringify(updatedTodos));
+    } catch (err) {
+      console.error("토글 업데이트 실패", err);
+    }
   };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleAddTask();
   };
 
-  const todoItems = todos?.filter((t) => t.status === "todo") ?? [];
-  const doneItems = todos?.filter((t) => t.status === "done") ?? [];
-
-  if (todos === null) {
-    return <div className="text-center py-10 text-slate-500">로딩 중...</div>;
-  }
+  const todoItems = todos.filter((todo) => !todo.isCompleted);
+  const doneItems = todos.filter((todo) => todo.isCompleted);
 
   return (
     <div className="w-full min-h-screen bg-slate-100 text-slate-900 px-6 py-10">
@@ -94,46 +99,27 @@ export default function HomePage() {
             <Button
               onClick={handleAddTask}
               className="h-12 px-6 border-2 border-slate-900 bg-white hover:bg-slate-100 rounded-full"
-              >
+            >
               + 추가하기
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 좌우 카드 레이아웃 */}
+      {/* 목록 */}
       <div className="max-w-6xl mx-auto flex gap-8">
-        {/* TO DO 카드 */}
-        <div className="w-1/2">
-          <h2 className="mb-4 px-4 py-2 rounded-full bg-lime-300 text-slate-900 font-bold inline-block">
-            TO DO
-          </h2>
-          <div className="space-y-4">
-            {todoItems.length === 0 ? (
-              <p className="text-slate-400 px-4">할 일이 없어요</p>
-            ) : (
-              todoItems.map((todo) => (
-                <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* DONE 카드 */}
-        <div className="w-1/2">
-          <h2 className="mb-4 px-4 py-2 rounded-full bg-green-800 text-white font-bold inline-block">
-            DONE
-          </h2>
-          <div className="space-y-4">
-            {doneItems.length === 0 ? (
-              <p className="text-slate-400 px-4">아직 다한 일이 없어요</p>
-            ) : (
-              doneItems.map((todo) => (
-                <TodoItem key={todo.id} todo={todo} onToggle={handleToggle} />
-              ))
-            )}
-          </div>
-        </div>
+        <TodoSection
+          title="TO DO"
+          color="bg-lime-300 text-slate-900"
+          todos={todoItems}
+          onToggle={handleToggle}
+        />
+        <TodoSection
+          title="DONE"
+          color="bg-green-800 text-white"
+          todos={doneItems}
+          onToggle={handleToggle}
+        />
       </div>
     </div>
   );

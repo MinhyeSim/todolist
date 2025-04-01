@@ -1,9 +1,8 @@
-// src/features/todos/components/TodoList.tsx
-import { Todo } from "../types";
+import { TodoResponse } from "../types";
 import TodoSection from "./TodoSection";
 
 type Props = {
-  todos: Todo[];
+  todos: TodoResponse[];
   onToggle: (id: string) => void; 
 };
 
