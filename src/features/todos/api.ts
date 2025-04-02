@@ -78,12 +78,11 @@ export async function uploadImage(tenantId: string, file: File): Promise<string>
         },
       }
     );
-  
-    console.log("✅ 업로드된 이미지 URL:", response.data.url);
+
     return response.data.url;
   } catch (err) {
-    const error = err as any;
-    console.error("❌ 이미지 업로드 실패", error?.response?.data || error.message || error);
+    const error = err as unknown;
+    console.error("❌ 이미지 업로드 실패", error);
     throw error;
   }
 

@@ -9,6 +9,7 @@ import {
   deleteTodo,
   uploadImage,
 } from "@/features/todos/api";
+import Image from 'next/image';
 
 const tenantId = "minhye";
 
@@ -34,8 +35,8 @@ export default function DetailPage() {
         setMemo(result.memo || "");
         setImageUrl(result.imageUrl || null);
       } catch (err) {
-        const error = err as any;
-        console.error("상세 조회 실패", error?.response?.data || error.message || error);
+        const error = err as unknown;
+        console.error("상세 조회 실패", error);
       }
     };
     fetchData();
@@ -62,8 +63,8 @@ export default function DetailPage() {
 
       router.push("/");
     } catch (err) {
-      const error = err as any;
-      console.error("수정 실패", error?.response?.data || error.message || error);
+      const error = err as unknown;
+      console.error("수정 실패", error);
     }
   };
 
@@ -74,8 +75,8 @@ export default function DetailPage() {
       await deleteTodo(tenantId, todo.id);
       router.push("/");
     } catch (err) {
-      const error = err as any;
-      console.error("삭제 실패", error?.response?.data || error.message || error);
+      const error = err as unknown;
+      console.error("삭제 실패", error);
     }
   };
 
@@ -102,8 +103,8 @@ export default function DetailPage() {
       console.log(url);
       setImageError("");
     } catch (err) {
-      const error = err as any;
-      console.error("업로드 실패:", error?.response?.data || error.message || error);
+      const error = err as unknown;
+      console.error("업로드 실패:", error);
       setImageError("이미지 업로드 중 오류가 발생했습니다.");
     }
   };
@@ -141,7 +142,7 @@ export default function DetailPage() {
           {imageError && <p className="text-red-500 text-sm mt-2">{imageError}</p>}
           {imageUrl && (
             <div className="w-full h-[240px] flex items-center justify-center">
-            <img
+            <Image
               src={imageUrl}
               alt="미리보기"
               className="w-full h-full object-contain max-h-60 rounded-lg"

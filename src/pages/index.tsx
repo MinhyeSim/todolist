@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { TodoResponse } from "@/features/todos/types";
@@ -12,7 +11,6 @@ export default function HomePage() {
   const [todos, setTodos] = useState<TodoResponse[]>([]);
   const [task, setTask] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
 
   // 서버에서 할 일 목록 불러오기
   useEffect(() => {
