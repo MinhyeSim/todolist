@@ -32,7 +32,6 @@ export default function HomePage() {
     fetchTodos();
   }, []);
 
-  // 로컬스토리지 동기화
   useEffect(() => {
     localStorage.setItem(tenantId, JSON.stringify(todos));
   }, [todos]);

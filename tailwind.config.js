@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: ["./src/**/*.{js,ts,jsx,tsx}"],
+    safelist: ["font-nanum"],
     theme: {
       extend: {
         fontFamily: {
-          nanum: ['"NanumSquare"', 'sans-serif'],
+          nanum: ['NanumSquare', 'sans-serif'],
         },
         colors: {
           slate: {
@@ -22,6 +23,7 @@ module.exports = {
           },
           rose: {
             500: "#F43F5E",
+            600: "#E11D48",
           },
           lime: {
             300: "#BEF264",

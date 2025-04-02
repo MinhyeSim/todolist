@@ -10,15 +10,14 @@
 
 - CRUD 기능 구현
 
-## 스타일링
-
-- Tailwind
 
 ## 배포
 
 - VerCel
 
 ## 사용방법
+
+- 참고 : 상세 페이지 조회시 로딩이 다소 걸릴 수 있습니다.
 
 1.  {tenantId} = minhye
 baseURL: "https://assignment-todolist-api.vercel.app/api/{tenantId}에 minhye를 기재해주세요.
@@ -30,6 +29,7 @@ baseURL: "https://assignment-todolist-api.vercel.app/api/{tenantId}에 minhye를
 
 3. 할 일 상세 페이지(/items/{itemId})
 - 할 일 수정 기능
-- 할 일 삭제 기능능
+*   이미지 첨부(파일 이름이 영어로만 가능 & 크기 5MB 이하)
+- 할 일 삭제 기능
 
 <br />

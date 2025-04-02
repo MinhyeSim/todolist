@@ -23,11 +23,9 @@ export default function DetailPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState("");
 
-  // 상세 조회
   useEffect(() => {
     if (!itemId) return;
-
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const result = await getTodoDetail(tenantId, String(itemId));
         setTodo(result);
@@ -37,17 +35,14 @@ export default function DetailPage() {
         setImageUrl(result.imageUrl || null);
       } catch (err) {
         const error = err as any;
-        console.error("상세 조회 실패:", error?.response?.data || error.message || error);
+        console.error("상세 조회 실패", error?.response?.data || error.message || error);
       }
     };
-
-    fetch();
+    fetchData();
   }, [itemId]);
 
-  // 수정
   const handleSave = async () => {
     if (!todo || !itemId) return;
-
     try {
       const updated = await updateTodo(tenantId, todo.id, {
         name,
@@ -68,28 +63,19 @@ export default function DetailPage() {
       router.push("/");
     } catch (err) {
       const error = err as any;
-      console.error("수정 실패:", error?.response?.data || error.message || error);
+      console.error("수정 실패", error?.response?.data || error.message || error);
     }
   };
 
-  // 삭제
+  // 삭제하기
   const handleDelete = async () => {
     if (!todo) return;
-
     try {
       await deleteTodo(tenantId, todo.id);
-
-      const saved = localStorage.getItem(tenantId);
-      if (saved) {
-        const todos: TodoResponse[] = JSON.parse(saved);
-        const filtered = todos.filter((t) => t.id !== todo.id);
-        localStorage.setItem(tenantId, JSON.stringify(filtered));
-      }
-
       router.push("/");
     } catch (err) {
       const error = err as any;
-      console.error("삭제 실패:", error?.response?.data || error.message || error);
+      console.error("삭제 실패", error?.response?.data || error.message || error);
     }
   };
 
@@ -113,6 +99,7 @@ export default function DetailPage() {
     try {
       const url = await uploadImage(tenantId, file);
       setImageUrl(url);
+      console.log(url);
       setImageError("");
     } catch (err) {
       const error = err as any;
@@ -121,87 +108,76 @@ export default function DetailPage() {
     }
   };
 
-  if (!todo)
-    return <div className="p-6 text-center text-slate-500">할 일을 찾을 수 없습니다.</div>;
+  if (!todo) {
+    return (
+      <div className="p-6 text-center text-slate-500">할 일을 찾을 수 없습니다.</div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow space-y-6">
-      {/* 상태 + 제목 */}
-      <div className="space-y-1">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setIsCompleted((prev) => !prev)}
-            className={`text-sm px-3 py-1 rounded-full font-semibold transition ${
-              isCompleted
-                ? "bg-violet-600 text-white"
-                : "bg-slate-300 text-slate-900"
-            }`}
-          >
-            {isCompleted ? "완료됨" : "진행 중"}
-          </button>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="할 일 제목"
-            className="flex-1 border border-slate-300 px-4 py-2 rounded-md text-base"
+    <div className="max-w-3xl mx-auto p-6 space-y-8">
+      {/* 상단 제목 입력과 상태 */}
+      <div className="flex gap-2 items-center">
+        <button
+          onClick={() => setIsCompleted((prev) => !prev)}
+          className="w-[90px] shrink-0 text-sm px-3 py-1 rounded-full font-semibold transition bg-slate-300 text-slate-900"
+        >
+          {isCompleted ? "✅ 완료됨" : "⭕ 진행 중"}
+        </button>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="flex-1 px-3 py-2 text-lg bg-transparent outline-none"
+          placeholder="할 일 제목을 입력하세요"
+        />
+      </div>
+
+      {/* 중단: 좌측 이미지 / 우측 메모 */}
+      <div className="flex gap-6">
+        {/* 이미지 업로드 */}
+        <div className="w-1/2 bg-slate-100 border border-dashed border-slate-300 rounded-xl p-4 flex flex-col justify-center items-center min-h-[250px]">
+          <label className="text-sm text-slate-500 mb-2">이미지 업로드</label>
+          <input type="file" accept="image/*" onChange={handleImageChange} />
+          {imageError && <p className="text-red-500 text-sm mt-2">{imageError}</p>}
+          {imageUrl && (
+            <div className="w-full h-[240px] flex items-center justify-center">
+            <img
+              src={imageUrl}
+              alt="미리보기"
+              className="w-full h-full object-contain max-h-60 rounded-lg"
+            />
+            </div>
+          )}
+        </div>
+
+        {/* 메모 입력 */}
+        <div className="w-1/2 bg-yellow-50 rounded-xl p-4">
+          <h3 className="block text-center font-semibold text-slate-800 text-sm mb-2">
+            Memo
+          </h3>
+          <textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="메모를 입력하세요"
+            className="w-[745px] h-[200px] p-3 border border-slate-300 rounded-md resize-none bg-[#fffbea] text-slate-800 text-sm leading-relaxed"
           />
         </div>
-      </div>
-
-      {/* 메모 */}
-      <div className="space-y-1">
-        <label className="text-sm font-semibold text-slate-600">메모</label>
-        <textarea
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          placeholder="메모를 입력하세요"
-          className="w-full min-h-[100px] border border-slate-300 px-4 py-2 rounded-md resize-none"
-        />
-      </div>
-
-      {/* 이미지 업로드 */}
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-600">
-          이미지 업로드
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="block text-sm text-slate-600"
-        />
-        {imageError && <p className="text-red-500 text-sm">{imageError}</p>}
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt="미리보기"
-            className="w-32 h-32 object-cover rounded-lg border border-slate-300"
-          />
-        )}
       </div>
 
       {/* 버튼 */}
-      <div className="flex justify-between pt-4 border-t border-slate-200 mt-4">
+      <div className="flex justify-end gap-4">
         <button
-          onClick={() => router.push("/")}
-          className="bg-slate-100 text-slate-800 px-4 py-2 rounded-md hover:bg-slate-200"
+          onClick={handleSave}
+          className="bg-white border border-slate-900 px-4 py-2 rounded-full hover:bg-slate-100"
         >
-          ← 돌아가기
+          ✔ 수정 완료
         </button>
-        <div className="flex gap-2">
-          <button
-            onClick={handleDelete}
-            className="bg-rose-500 text-white px-4 py-2 rounded-md hover:bg-rose-600"
-          >
-            삭제하기
-          </button>
-          <button
-            onClick={handleSave}
-            className="bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-700"
-          >
-            수정 완료
-          </button>
-        </div>
+        <button
+          onClick={handleDelete}
+          className="bg-[#F43F5E] text-white px-4 py-2 rounded-full hover:bg-[#e11d48]"
+        >
+          ✖ 삭제하기
+        </button>
       </div>
     </div>
   );

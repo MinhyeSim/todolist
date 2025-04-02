@@ -18,7 +18,7 @@ const TodoItem = ({ todo, onToggle }: Props) => {
   };
 
   const handleToggleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation(); // 카드 클릭 방지
+    e.stopPropagation(); 
     onToggle(todo.id);
   };
 

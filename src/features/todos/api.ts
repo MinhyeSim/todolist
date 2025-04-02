@@ -68,15 +68,23 @@ export async function uploadImage(tenantId: string, file: File): Promise<string>
   const formData = new FormData();
   formData.append("image", file);
 
-  const response = await api.post<{ imageUrl: string }>(
-    `/${tenantId}/images/upload`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  try{
+    const response = await api.post<{ url: string }>(
+      `/${tenantId}/images/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  
+    console.log("✅ 업로드된 이미지 URL:", response.data.url);
+    return response.data.url;
+  } catch (err) {
+    const error = err as any;
+    console.error("❌ 이미지 업로드 실패", error?.response?.data || error.message || error);
+    throw error;
+  }
 
-  return response.data.imageUrl;
 }
