@@ -159,7 +159,7 @@ export default function DetailPage() {
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             placeholder="메모를 입력하세요"
-            className="w-[745px] h-[200px] p-3 border border-slate-300 rounded-md resize-none bg-[#fffbea] text-slate-800 text-sm leading-relaxed"
+            className="w-full h-[200px] p-3 border border-slate-300 rounded-md resize-none bg-[#fffbea] text-slate-800 text-sm leading-relaxed"
           />
         </div>
       </div>
