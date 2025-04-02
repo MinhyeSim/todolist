@@ -9,7 +9,6 @@ import {
   deleteTodo,
   uploadImage,
 } from "@/features/todos/api";
-import Image from 'next/image';
 
 const tenantId = "minhye";
 
@@ -142,7 +141,7 @@ export default function DetailPage() {
           {imageError && <p className="text-red-500 text-sm mt-2">{imageError}</p>}
           {imageUrl && (
             <div className="w-full h-[240px] flex items-center justify-center">
-            <Image
+            <img
               src={imageUrl}
               alt="미리보기"
               className="w-full h-full object-contain max-h-60 rounded-lg"

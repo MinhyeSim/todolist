@@ -7,9 +7,9 @@ type Props = {
 };
 
 const TodoList = ({ todos, onToggle }: Props) => {
-  const todoItems = todos.filter((t) => t.status === "todo");
-  const doneItems = todos.filter((t) => t.status === "done");
-
+  const todoItems = todos.filter((t) => !t.isCompleted);
+  const doneItems = todos.filter((t) => t.isCompleted);
+  
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full max-w-5xl">
       <TodoSection
