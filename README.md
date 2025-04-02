@@ -17,8 +17,6 @@
 
 ## 사용방법
 
-- 참고 : 상세 페이지 조회시 로딩이 다소 걸릴 수 있습니다.
-
 1.  {tenantId} = minhye
 baseURL: "https://assignment-todolist-api.vercel.app/api/{tenantId}에 minhye를 기재해주세요.
 
