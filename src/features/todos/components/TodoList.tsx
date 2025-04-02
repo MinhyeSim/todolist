@@ -3,7 +3,7 @@ import TodoSection from "./TodoSection";
 
 type Props = {
   todos: TodoResponse[];
-  onToggle: (id: string) => void; 
+  onToggle: (id: number) => void; 
 };
 
 const TodoList = ({ todos, onToggle }: Props) => {
